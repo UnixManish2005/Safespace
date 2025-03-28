@@ -1,0 +1,207 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Prediction Model 2</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Times New Roman', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .result-card {
+            display: none;
+            margin-top: 20px;
+        }
+        .risk-Low {
+            background-color: #d4edda;
+        }
+        .risk-Moderate {
+            background-color: #fff3cd;
+        }
+        .risk-High {
+            background-color: #f8d7da;
+        }
+        .risk-Very {
+            background-color: #dc3545;
+            color: white;
+        }
+        .card-header {
+            background-color: #6c63ff;
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: bold;
+            /* padding: -3rem; */
+            /* padding: 1rem; */
+            
+        }
+
+        .loader {
+            display: none;
+            border: 5px solid #f3f3f3;
+            /* border-top: 5px solid #915cf3; */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .header-section {
+            background-color: #6c63ff;
+            color: rgb(255, 255, 255);
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 20px 20px;
+        }
+       
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <h1 class="text-center">Safety Risk Assessment Model 1</h1>
+            <p class="text-center mb-0">Predict safety levels based on demographic and incident data</p>
+        </div>
+    </div>
+    <div class="container mt-5">
+        <div  class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-primary text-white" id="change">
+                        <h2    class="text-center1">Enter Data</h2>
+                        
+                    </div>
+                    <div class="card-body">
+                        <form id="prediction-form">
+                            <div class="mb-3">
+                                <label for="state" class="form-label">State:</label>
+                                <select class="form-select" id="state" name="state" required>
+                                    <option value="">Select a state</option>
+                                    {% for state in states %}
+                                    <option value="{{ state }}">{{ state }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="year" class="form-label">Year:</label>
+                                <select class="form-select" id="year" name="year" required>
+                                    <option value="">Select a year</option>
+                                    {% for year in years %}
+                                    <option value="{{ year }}">{{ year }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="age" class="form-label">Age:</label>
+                                <input type="number" class="form-control" id="age" name="age" min="5" max="65" required>
+                                <div class="form-text">Please enter an age between 5 and 65.</div>
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary">Predict Risk</button>
+                            </div>
+                        </form>
+                      
+                        
+                        <div class="loader" id="loader"></div>
+                        
+                        <div class="result-card card" id="result-card">
+                            <div class="card-header">
+                                <h3 class="text-center">Safety Prediction Results</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>State:</strong> <span id="result-state"></span></p>
+                                        <p><strong>Year:</strong> <span id="result-year"></span></p>
+                                        <p><strong>Age:</strong> <span id="result-age"></span></p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Risk Category:</strong> <span id="result-risk"></span></p>
+                                        <p><strong>Safety Score:</strong> <span id="result-score"></span></p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h4>Recommendations:</h4>
+                                    <ul id="result-recommendations"></ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">About This Tool</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>This safety assessment tool uses machine learning to evaluate safety levels based on Age of Girl, State,and year. The model analyzes population statistics and victim rates to predict risk categories and provide safety recommendations.</p>
+                        <p>The risk categories range from "Low Risk" to "Very High Risk" and are determined by comparing the input data with historical patterns from our dataset.</p>
+                        <p><strong>Note:</strong> This tool is for informational purposes only. Safety assessments should be complemented with local knowledge and official advisories.</p>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#prediction-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loader
+                $('#loader').show();
+                $('#result-card').hide();
+                
+                // Get form data
+                const formData = {
+                    state: $('#state').val(),
+                    year: $('#year').val(),
+                    age: $('#age').val()
+                };
+                
+                // Make AJAX request
+                $.ajax({
+                    url: '/predict',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        // Hide loader
+                        $('#loader').hide();
+                        
+                        // Display results
+                        $('#result-state').text(response.State);
+                        $('#result-year').text(response.Year);
+                        $('#result-age').text(response.Age);
+                        $('#result-risk').text(response.Risk_Category);
+                        $('#result-score').text(response.Safety_Score);
+                        
+                        // Clear and populate recommendations
+                        const recommendationsList = $('#result-recommendations');
+                        recommendationsList.empty();
+                        response.Recommendations.forEach(function(recommendation) {
+                            recommendationsList.append(`<li>${recommendation}</li>`);
+                        });
+                        
+                        // Set card color based on risk category
+                        const riskClass = response.Risk_Category.split(' ')[0];
+                        $('#result-card').removeClass('risk-Low risk-Moderate risk-High risk-Very');
+                        $('#result-card').addClass(`risk-${riskClass}`);
+                        
+                        // Show result card
+                        $('#result-card').show();
+                    },
+                    error: function(error) {
+                        $('#loader').hide();
+                        alert('Error: ' + JSON.stringify(error));
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
